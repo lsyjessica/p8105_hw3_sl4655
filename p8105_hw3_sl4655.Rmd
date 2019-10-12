@@ -1,0 +1,14 @@
+---
+title: "p8105_hw3_sl4655"
+author: "Shuya Liu"
+date: "October 12, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(kableExtra)
+```
+
