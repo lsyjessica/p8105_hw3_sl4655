@@ -2,13 +2,81 @@
 title: "p8105_hw3_sl4655"
 author: "Shuya Liu"
 date: "October 12, 2019"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-library(kableExtra)
+library(ggridges)
+library(p8105.datasets)
 ```
 
+## Problem 1
+
+```{r}
+data("instacart")
+instacart <- instacart %>%
+  janitor::clean_names()
+```
+
+#### A Short Description
+
+The dataset has `r nrow(instacart)` observations of `r ncol(instacart)` variables: `r colnames(instacart)`. The descriptions for the variables are as below:
+
+* order_id: order identifier
+* product_id: product identifier
+* add_to_cart_order: order in which each product was added to cart
+* reordered: 1 if this prodcut has been ordered by this user in the past, 0 otherwise
+* user_id: customer identifier
+* eval_set: which evaluation set this order belongs in (Note that the data for use in this class is exclusively from the “train” eval_set)
+* order_number: the order sequence number for this user (1=first, n=nth)
+* order_dow: the day of the week on which the order was placed
+* order_hour_of_day: the hour of the day on which the order was placed
+* days_since_prior_order: days since the last order, capped at 30, NA if order_number=1
+* product_name: name of the product
+* aisle_id: aisle identifier
+* department_id: department identifier
+* aisle: the name of the aisle
+* department: the name of the department
+
+Take the first line as an example: the user with user ID 112108 placed an order with order ID 1. The first item he/she added to the card is Bulgarian Yogurt with product ID 49302, and this product has been ordered in the past. This is the 4th order of this user, and he/she placed this order on a Thursday at 10 a.m. It has been 9 days since his/her last order. The Bulgarian Yogurt is on the "yogurt" aisle with ID 120, in the department of dairy eggs with deparment ID 16. 
+
+#### How many aisles are there, and which aisles are the most items ordered from?
+
+```{r aisles}
+# Number of aisles
+n_aisles <- 
+  instacart %>% 
+  distinct(aisle_id) %>% 
+  nrow()
+```
+
+* There are `r n_aisles` aisles.
+
+* The top 6 aisles that the most items are ordered from are
+```{r number_of_items}
+# Count number of items sold on each aisle and arrange them in a descending order
+instacart %>% 
+  group_by(aisle) %>% 
+  summarise(number_of_items = n()) %>%
+  arrange(desc(number_of_items)) %>% 
+  head() %>% 
+  knitr::kable()
+```
+
+#### Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. Arrange aisles sensibly, and organize your plot so others can read it.
+```{r aisle_plot}
+instacart %>%
+  group_by(aisle) %>% 
+  summarise(number_of_items = n()) %>%
+  filter(number_of_items > 10000) %>%
+  arrange(desc(number_of_items)) %>%
+  ggplot(aes(x = aisle, y = number_of_items)) +
+  geom_point()
+```
+
+#### Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table.
+
+#### Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
