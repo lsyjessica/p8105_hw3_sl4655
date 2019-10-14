@@ -210,25 +210,44 @@ acc_data <- read_csv(file = "./Data/accel_data.csv") %>%
     names_to = "minute",
     names_prefix = "activity_",
     values_to = "activity_per_minute") %>% 
-  mutate(minute = as.numeric(minute),
-         hour = minute %/% 60,
-         minute = minute %% 60,
+  mutate(minute_id = as.numeric(minute),
+         hour = minute_id %/% 60,
+         minute = minute_id %% 60,
          day = day_id %% 7,
          week = as.factor(week),
          day = factor(day, 
                       levels = c(0:6), 
                       labels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))) %>%
-  select(week, day, hour, minute, activity_per_minute)
+  select(week, day, hour, minute, activity_per_minute, minute_id)
 ```
 
 This dataset has `r nrow(acc_data)` observations of `r ncol(acc_data)` variables:`r colnames(acc_data)`.
 
-#### Traditional analyses of accelerometer data focus on the total activity over the day. Using your tidied dataset, aggregate accross minutes to create a total activity variable for each day, and create a table showing these totals. Are any trends apparent?
+#### Total Activity over the Day
 
 ```{r total_activity_per_day}
 acc_data %>%
   group_by(week, day) %>% 
-  summarise(total_activity = sum(activity_per_minute))
+  summarise(total_activity = round(sum(activity_per_minute))) %>%
+  pivot_wider(names_from = day, values_from = total_activity) %>%
+  knitr::kable(caption = "Total Activity per Day")
 ```
 
-#### Accelerometer data allows the inspection activity over the course of the day. Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. Describe in words any patterns or conclusions you can make based on this graph.
+Basically, the patient has a relatively constant amount of activities per day, expect for some days that he moved too much or too little. On the Tuesday of the first week, the patient barely moved. On the Wednesdays of the last 2 weeks, the patient barely moved.
+
+#### Make a single-panel plot that shows the 24-hour activity time courses for each day
+```{r activity_plot}
+acc_data %>%
+  group_by(week, day) %>% 
+  ggplot(aes(x = minute_id, y = activity_per_minute, color = day)) +
+  geom_line(alpha = .5) + 
+  xlim(0, 1440) +
+  facet_grid(week ~ .) +
+  labs(
+    title = "The Activity over the Course of the Day",
+    x = "Time of the Day",
+    y = "Amount of Activities"
+  )
+```
+
+As we can see the graph, the patient's total amount of activties decreases as the week passes. For Mondays, the patient has more activites around 20:00 to 21:30. For Thursdays, the patients has more activities around 10:30 to 12:30. The activities tend to decrease to its minimum after 23:00, and starts to increase after 5:00.
