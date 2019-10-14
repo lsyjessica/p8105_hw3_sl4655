@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(ggridges)
+library(patchwork)
 library(p8105.datasets)
 ```
 
@@ -101,7 +102,7 @@ mean_hour <- instacart %>%
   select(order_dow, order_hour_of_day, product_name) %>% 
   group_by(product_name, order_dow) %>% 
   summarize(mean_time = mean(order_hour_of_day)) %>% 
-  spread(key = product_name, value = mean_time) %>% 
+  pivot_wider(names_from = product_name, values_from = mean_time) %>% 
   t() %>%
   round(2) %>% 
   as.data.frame()
@@ -124,4 +125,75 @@ df_brfss <- brfss_smart2010 %>%
   janitor::clean_names() %>% 
   filter(topic == 'Overall Health') %>%
   mutate(response = as.factor(response))
+df_brfss$response <-
+  factor(df_brfss$response,levels(df_brfss$response)[c(4,2,3,5,1)])
+```
+
+#### In 2002, which states were observed at 7 or more locations? What about in 2010?
+```{r year_2002}
+year_2002 <- df_brfss %>%
+  filter(year == 2002) %>%
+  group_by(locationabbr) %>%
+  mutate(number_of_obs = length(unique(locationdesc))) %>%
+  filter(number_of_obs == 7) %>% 
+  distinct(locationabbr)
+```
+
+For year 2002, the states that were observed at 7 or more location were `r year_2002$locationabbr`.
+
+```{r year_2010}
+year_2010 <- df_brfss %>%
+  filter(year == 2010) %>%
+  group_by(locationabbr) %>%
+  mutate(number_of_obs = length(unique(locationdesc))) %>%
+  filter(number_of_obs == 7) %>% 
+  distinct(locationabbr)
+```
+
+For year 2010, the states that were observed at 7 or more location were `r year_2010$locationabbr`.
+
+#### Construct a dataset that is limited to Excellent responses, and contains, year, state, and a variable that averages the data_value across locations within a state. Make a “spaghetti” plot of this average value over time within a state
+
+```{r mean_data_value}
+df_brfss %>%
+  filter(response == 'Excellent') %>%
+  group_by(year, locationabbr) %>%
+  summarise(mean_data_value = mean(data_value)) %>% 
+  mutate(state = locationabbr,
+         mean_data_value = round(mean_data_value, 2)) %>% 
+  select(year, state, mean_data_value) %>%
+  ggplot(aes(x = year, y = mean_data_value, color = state)) +
+  geom_line()
+```
+
+#### Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State
+
+```{r two_panel}
+year_2006 <- df_brfss %>%
+  filter(year == 2006,
+         locationabbr == 'NY') %>%
+  ggplot(aes(x = response, y = data_value)) +
+  geom_point() +
+  ylim(0, 43) +
+  labs(
+    title = "Distribution of Data Value in NY in 2006",
+    x = "Response",
+    y = "Data Value"
+  ) +
+  theme(plot.title = element_text(size = 12))
+
+year_2010 <- df_brfss %>%
+  filter(year == 2010,
+         locationabbr == 'NY') %>%
+  ggplot(aes(x = response, y = data_value)) +
+  geom_point() +
+  ylim(0, 43) +
+  labs(
+    title = "Distribution of Data Value in NY in 2010",
+    x = "Response",
+    y = "Data Value"
+  ) +
+  theme(plot.title = element_text(size = 12))
+
+year_2006 + year_2010
 ```
